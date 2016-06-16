@@ -1,0 +1,434 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Geo Mama App</title>
+    <!-- Bootstrap CSS -->
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/bootstrap-datetimepicker.css" rel="stylesheet">
+    <link href="css/mycss.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
+
+    <script type="text/javascript" src="scripts/js/jquery-2.1.1.min.js"></script>
+    <script src="scripts/js/moment-with-locales.js"></script>
+    <script src="scripts/js/bootstrap-datetimepicker.js"></script>
+
+    <!-- JS Scripts -->
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?v=3&sensor=false&language=en"></script>
+    <script src="scripts/handlebars-v3.0.3.js"></script>
+    <script type="text/javascript">
+        var ConnectedWithInternet = -1;
+        var map, currentPositionMarker, mapCenter;
+        var OldLat, OldLng;
+        var AppName = 'GeoMaMa';
+        var DeviceGeneralInfo;
+        var DeviceLocationInfo;
+        var UserInfo = [];
+        var ServiceURL = "http://86.96.194.194:8002/WebServices/Webservice.asmx";
+        var RegisterScreen = 0;
+        var DeviceInfoSent = 0
+        var Coordinates;
+        var SelectedDate4Map;
+        var AuthenticatedUser = 0;
+        var DeviceGeneralInfo;
+    </script>
+    <!-- JS Scripts -->
+
+</head>
+<body>
+    <div id="table-container">
+        <div id="Splashcontainer">
+            <div id="main">
+                <div id="somebackground">
+                    <img src="images/logo.png" alt="" />
+                    <!-- Loading Animations Starts -->
+                    <div class="loader">Loading...</div>
+                    <!-- Loading Animations Starts -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Base Div Holder Starts -->
+    <div class="container" id="VehicleDetailsContainer">
+
+        <div id="VehicleDetails" class="white_content" style="display:none;float:left;">
+
+
+            <!-- Panel Info Css -->
+            <style>
+                .panel-info {
+                    margin-top: 10px;
+                }
+            </style>
+
+            <table style="width:100%">
+                <tbody>
+                    <tr>
+                        <td style="background-color:#3370b0; color:#ffffff !important; padding-left:5px;">
+                            <div style="float:left; width:90%">
+                                <table cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td style="width:15px" valign="top"><img id="DevStatusImg" /></td>
+                                        <td><b id="LblDevname" style="font-weight:bold"></b></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div style="float:right; margin-top:3px; width:10%;"><img src="images/close.png" alt="" onclick="$('#mainConatiner').show(); $('#HeaderTbl').show(); $('#VehicleDetails').hide(); document.getElementById('googlemap').style.visibility = 'hidden'" /></div>
+                            <div style="display:block">
+                                <table style="width:100%">
+                                    <tr>
+
+                                        <td>
+                                            <span id="DevDateTime"></span><br />
+                                            <span id="DevLocation" style="width:300px;"></span>
+                                        </td>
+                                        <td style="width:75px; color:#F80409; text-align:center" align="right" valign="top"><span style="font:status-bar" id="DevSpeed"></span></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="googlemap" style="width:100%; min-height:425px;display:none; position:fixed;top:125px"></div>
+        <div class="overview-cont" id="HeaderTbl">
+            <nav class="navbar navbar-inverse navbar-fixed-top">
+                <!--navbar-inverse -->
+                <div class="container-fluid" style="padding:0px;">
+                    <div style="background:#ffffff;width:100%;"><img src="images/logo.png" alt="" style="margin:0 5px;" /><a href="#"><span class="xfa xfa-user" id="weluser"></span></a></div>
+                    <div class="navbar-header" id="DivMenu" style="display:none;">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar" onclick="$('#myNavbar').show();"> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button>
+                        <ul class="nav fixedul">
+                            <li><a href="#" onclick="$('#googlemap').hide(); $('#myNavbar').hide(); LoadDiv('#Dashboard-tmpl', '#mainConatiner'); GetAllVehiclesStatus(AuthenticatedUser)">Dashboard</a></li>
+                            <li><a href="#" onclick="$('#googlemap').hide(); $('#myNavbar').hide(); GetAllVehicles(AuthenticatedUser);">Vehicles</a></li>
+                            <li><a href="#" onclick="$('#googlemap').hide(); $('#myNavbar').hide(); LoadDiv('#Report-tmpl', '#mainConatiner'); ">Reports</a></li>
+                        </ul>
+                    </div>
+                    <div class="collapse navbar-collapse" id="myNavbar">
+                        <ul class="nav navbar-nav">
+                            <li><a href="#" onclick="LoadDiv('#Login-tmpl', '#mainConatiner'); $('#googlemap').hide(); $('#DivMenu').hide(); $('#myNavbar').hide();">Logout</a></li>
+                            <!--<li><a href="#">Link 02</a></li>
+                            <li><a href="#">Link 03</a></li>-->
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <h2 class="" style="padding-bottom:15px">&nbsp;</h2>
+        <!-- Logo Section Alone Starts -->
+        <section>
+            <div class="container" style=" overflow:scroll; overflow-x:hidden;margin-top:40px;">
+                <div class="row">
+                    <div class="board">
+                        <div class="tab-content">
+                            <div id="mainConatiner" style="margin:0px; padding:0px">
+
+                            </div>
+
+                            <!-- Login Holder Starts -->
+                            <script id="Login-tmpl" type="text/x-handlebars-template">
+                                <div class="tab-pane fade in active" id="login">
+                                    <div class="col-centered">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading"> <i class="glyphicon glyphicon-lock"></i> Login</div>
+                                            <div class="panel-body">
+                                                <form class="form-horizontal" role="form">
+                                                    <div class="form-group">
+                                                        <label for="inputEmail" class="col-sm-3 control-label">Username</label>
+                                                        <div class="col-sm-9">
+                                                            <input type="email" value="4allrac" class="form-control" id="inputEmail" placeholder="Username" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="inputPassword" class="col-sm-3 control-label">Password</label>
+                                                        <div class="col-sm-9">
+                                                            <input type="password" value="1983" class="form-control" id="inputPassword" placeholder="Password" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group last">
+                                                        <div class="col-sm-offset-3 col-sm-9">
+                                                            <input type="button" value="Login" class="btn btn-success btn-sm" onclick="LoginUser($('#inputEmail').val(), $('#inputPassword').val());">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </script>
+                            <!-- Login Holder Ends -->
+                            <!-- Dashboard Starts -->
+                            <script id="Dashboard-tmpl" type="text/x-handlebars-template">
+                                <div class="overview-cont" id="DashboardDiv">
+                                    <div class="menu-box block">
+                                        <ul class="menu-box-menu">
+                                            <li>
+                                                <a class="menu-box-tab" href="#">
+                                                    <span class="icon fa fa-car fa-2x"></span>Vehicles (GeoMaMa)
+                                                    <div class="menu-box-number" id="VehiclesGeoMaMa"></div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="menu-box-tab" href="#">
+                                                    <span class="icon fa fa-car fa-2x"></span>Vehicles (SP)
+                                                    <div class="menu-box-number" id="VehiclesSP"></div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="menu-box-tab" href="#">
+                                                    <span class="icon fa fa-power-off fa-2x grecol"></span>Moving
+                                                    <div class="menu-box-number" id="Travelling"></div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="menu-box-tab" href="#">
+                                                    <span class="icon fa fa-power-off fa-2x redcol"></span>Stopped
+                                                    <div class="menu-box-number" id="Stopped"></div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="menu-box-tab" href="#">
+                                                    <span class="icon fa  fa-product-hunt fa-2x blucol"></span>Parked
+                                                    <div class="menu-box-number" id="OffliceLocation"></div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="menu-box-tab" href="#">
+                                                    <span class="icon fa fa-signal fa-2x redcol"></span>Offline
+                                                    <div class="menu-box-number" id="Offline"></div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="menu-box-tab" href="#">
+                                                    <span class="icon fa fa-exclamation-triangle fa-2x redcol"></span>Alerts
+                                                    <div class="menu-box-number" id="Total"></div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="menu-box-tab menu-box-tablast" href="#">
+                                                    <span class="fa-stack fa-lg icon" style="margin-right:12px;"> <i class="fa fa-car fa-stack-2x text-danger"></i> <i class="fa fa-wrench fa-stack-2x"></i> </span> Maintenance
+                                                    <div class="menu-box-number" id="Maintenance"></div>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </script>
+                            <!-- Dashboard Ends -->
+                            <!-- Home Holder Starts -->
+                            <script id="UserHome-tmpl" type="text/x-handlebars-template">
+                                <div id="ClientVehiclesDataDiv">
+                                </div>
+                            </script>
+                            <!-- Home Holder End -->
+                            <!-- Activity Reports Details Start -->
+                            <script id="ActivityReportGrid-tmpl" type="text/x-handlebars-template">
+                                <table class="tabalt">
+                                    <tbody>
+                                        <tr style="display:none">
+                                            <td>
+                                                Street/Community/City
+                                            </td>
+                                            <td>
+                                                Speed
+                                            </td>
+                                            <td>
+                                                Odometer
+                                            </td>
+                                        </tr>
+                                        {{#.}}
+                                        <tr id="">
+                                            <td>
+                                                <img src="images/{{this.eventcodeimage}}" />&nbsp; {{this.UTCTime}}<br />
+                                                {{this.Location}} {{this.City}}
+                                            </td>
+                                            <td style="width:30px; color:#F80409" align="center" valign="top"><span style="font:status-bar">{{this.Speed}}<br />km/hr</span></td>
+                                            <td>
+                                                {{this.Odometer}}
+                                            </td>
+                                        </tr>
+                                        {{/.}}
+                                    </tbody>
+                                </table>
+                            </script>
+                            <!-- Activity Reports Details End -->
+                            <!-- Reports Starts -->
+                            <script id="Report-tmpl" type="text/x-handlebars-template">
+
+                                <div class="col-md-6" id="ReportDiv">
+                                    <div class="panel panel-info">
+                                        <div class="panel-heading">Reports Form</div>
+                                        <div class="panel-body">
+                                            <form role="form">
+                                                <div class="styled-select">
+                                                    <select id="DDLDevice">
+                                                        <option value="-1">Select Vehicle</option>
+                                                        <option value="0">All Vechicle</option>
+                                                        <option value="11112512">test</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group" style="display:none">
+                                                    <h5 class="smcap">Speed Limit</h5>
+                                                    <input type="email" class="form-control" placeholder="Speed Limit">
+                                                </div>
+                                                <div class="form-group">
+                                                    <h5 class="smcap">Choose Report From Date</h5>
+                                                    <div style="display:inline-block;">
+                                                        <div>
+                                                            <div class="input-group date" id="datetimepicker1">
+                                                                <input type="text" class="form-control" id="txtdatetimepicker1" value="2016-04-17 11:00" />
+                                                                <span class="input-group-addon"> <span class="glyphicon glyphicon-calendar"></span> </span>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <h5 class="smcap">Choose Report To Date</h5>
+                                                    <div style="display:inline-block;">
+                                                        <div>
+                                                            <div class="input-group date" id="datetimepicker2">
+                                                                <input type="text" class="form-control" id="txtdatetimepicker2" value="2016-04-17 20:00"/>
+                                                                <span class="input-group-addon"> <span class="glyphicon glyphicon-calendar"></span> </span>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group" style="display:none">
+                                                    <div class="styled-select">
+                                                        <select>
+                                                            <option>Option 01</option>
+                                                            <option>Option 02</option>
+                                                            <option>Option 03</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <input type="button" class="btn btn-danger" value="Submits" onclick="GetVehicleActivityReport(AuthenticatedUser, $('#DDLDevice').val(), $('#txtdatetimepicker1').val(), $('#txtdatetimepicker2').val(), 1)">
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </script>
+
+                            <script type="text/javascript">
+                                $(function () {
+                                    $('#datetimepicker1').datetimepicker();
+                                });
+                            </script>
+                            <script type="text/javascript">
+                                $(function () {
+                                    $('#datetimepicker2').datetimepicker();
+                                });
+                            </script>
+                            <!-- Reports End -->
+
+                            <script id="ClientVehicles-tmpl" type="text/x-handlebars-template">
+                                <div style="overflow:scroll; x-overflow:hidden;">
+                                    <table class="tabalt">
+                                        <tbody>
+                                            {{#.}}
+                                            <tr id="Row{{this.RowNumber}}" onclick="ShowDetails('{{this.dev_id}}','{{this.dev_name}}','{{this.utctime}}','{{this.speed}}','{{this.eventcodeimage}}','{{this.area_name}}','{{this.street}}','{{this.city}}','{{this.lat}}','{{this.lng}}','{{this.devstatus}}')">
+                                                <td style="width:15px" valign="top"><img src="images/{{this.eventcodeimage}}" /></td>
+                                                <td>
+                                                    <h1>{{this.dev_name}}</h1>
+                                                    <span style="font:menu">{{this.street}} {{this.area_name}} {{this.city}}</span>
+                                                </td>
+                                                <td style="width:30px; color:#F80409" align="center" valign="top"><span style="font:status-bar">{{this.speed}}<br />km/hr</span></td>
+                                            </tr>
+                                            {{/.}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!--<a href="javascript:void(0)" onclick="document.getElementById('popclk').style.display='block';document.getElementById('fade').style.display='block'">Click Here Popup</a>-->
+                                <div id="fade" class="black_overlay"></div>
+                            </script>
+
+                            <div class="clearfix"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            $(function () {
+                $('a[title]').tooltip();
+            });
+
+            function ShowDetails(dev_id, dev_name, utctime, speed, eventcodeimage, area, street, city, lat, lng, devstatus) {
+                $('#googlemap').show();
+                document.getElementById('DevStatusImg').src = "images/" + eventcodeimage;
+                $('#LblDevname').html(dev_name);
+                $('#DevSpeed').html(speed + '<br/>km/hr');
+                $('#DevLocation').html(street + ' ' + area + ' ' + city);
+                $('#DevDateTime').html(utctime);
+                LoadMap(lat, lng, devstatus);
+                $('#mainConatiner').hide();
+                $('#HeaderTbl').hide();
+                $('#VehicleDetails').show();
+                //$('#googlemap').prop("visible", "");
+                document.getElementById("googlemap").style.visibility = "visible"
+            }
+        </script>
+    </div>
+    <!-- Base Div Holder Ends-->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins)
+    Include all compiled plugins (below), or include individual files as needed -->
+    <script src="cordova.js"></script>
+    <script src="scripts/index.js"></script>
+    <!--<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>-->
+    <!--<script src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.0-rc2/js/bootstrap.min.js"></script>-->
+    <script src="scripts/js/bootstrap.min.js"></script>
+
+    <script>
+        function LoadMap(lat, lng, devstatus) {
+            var latlng = new google.maps.LatLng(lat, lng, devstatus);
+
+            var myOptions = {
+                zoom: 14,
+                center: latlng,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+
+            var markerimg
+            if (devstatus == 'B')
+                markerimg = 'images/green.png'
+            else
+                markerimg = 'images/red.png'
+            map = new google.maps.Map(document.getElementById("googlemap"), myOptions);
+
+            var MarkerIcon = new google.maps.MarkerImage(
+                markerimg, //url
+                new google.maps.Size(33, 33), //size
+                new google.maps.Point(0, 0)//, //origin
+                //new google.maps.Point(anchor_left, anchor_top) //anchor
+                );
+
+            var marker = new google.maps.Marker({
+                position: latlng,
+                icon: MarkerIcon,
+                map: map
+            });
+        }
+
+        $(window).scroll(function () {
+            $("#HeaderTbl").css("top", Math.max(0, 5 - $(this).scrollTop()));
+
+
+            $("#mainConatiner").css("top", Math.max(0, 5 - $(this).scrollTop()));
+            $("#VehicleDetailsContainer").css("top", Math.max(0, 5 - $(this).scrollTop()));
+        });
+
+
+    </script>
+</body>
+</html>
